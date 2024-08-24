@@ -335,7 +335,7 @@ triangulo:
     ; Calculo del area del triangulo
     ; sqrt(3)/4 = 0.433 (se esacala por mil para poder tener los decimales)
     mov ax, [lado]
-    mul [ladoe]  ; lado^2
+    mul [lado]  ; lado^2
     mov bx, 433
     mul bx  
     mov bx, 1000
