@@ -1,0 +1,7 @@
+leer string byte por byte, ir contando cada byte hasta encontrar un punto
+una vez encontrado el punto, pasamos a parte decimal, y con otro contador contamos cada digito decimal
+para cada parte (decimal e entera), con 4 ifs, ir multiplicando por 1000, 100, 10 etc. cada digito para acomodarlo en una variable como un numero, y vamos sumando cada digito multiplicado a esa variable para armar el numero. 
+con el contador del decimal, multiplicamos los enteros por 10^contador, para hacer campo, y sumamos los digitos decimales como si fueran enteros, para tener un numero entero.
+
+para suma, se suman los dos inputs bien armados, y se imprimen a pantalla en orden, poniendo un punto antes de la parte que hubiera sido decimal
+para multiplicacion, se multiplican los inputs bien armados, se imprimen en orden, poniendo un punto antes de los 4 ultimos (si es, por ejemplo. 1.67x1.69 o algo asi con dos digitos decimales cada input).
