@@ -5,26 +5,29 @@ data segment
 cr equ 13d ; carriage return y
 lf equ 10d ; line feed, para newlines
 
+buffer db 80,?, 80 dup ('?')
+lado_input db 10 dup('$')
+
 bienvenida db "Bienvenido a GeometryTEC, una herramienta para calcular areas y perimetros de figuras$",cr,lf
 opciones db "Por favor, digite el numero al lado de la figura a calcular:"Î,cr,lf,"1) Cuadrado",cr,lf,"2) Rectangulo",cr,lf,"3) Triangulo (equilatero)",cr,lf,"4) Rombo",cr,lf,"5) Pentagono",cr,lf,"6) Hexagono",cr,lf,"7) Circulo",cr,lf,"8) Trapecio",cr,lf,"9) Paralelogramo$",cr,lf
-area db "Area: $",cr,lf
-perimetro db "Perimetro: $",cr,lf
-pedirlado db "Por favor, digite el valor del lado: $",cr,lf
+
+lado db lf,cr,"Lado: ","$"               
+base db lf,cr,"Base: ","$"
+altura db lf,cr,"Altura: ","$"
+area db "Area: ","$"
+perimetro db "Perimetro: ","$"
+
 novalido db "Por favor, ingrese un valor valido",cr,lf
 seguirosalir db "Continuar con otro calculo, o salir?$",cr,lf
 continuar db "1) Continuar$",cr,lf
 salir db "2) Salir$",cr,lf
 
-var1a dw 0
-var2a dw 0
-var1b dw 0
-var2b dw 0
 
-lado dw 0
+
+ladonum dw 0
 perimetronum dw 0
 areanum dw 0
 
-lado_input db 10 dup('$')
 
 data ends
 
@@ -41,65 +44,60 @@ code segment
 ;procedures
 
 
+myprint proc near
+    mov ah, 09h
+    int 21h
+    ret
+myprint endp
+
 get_input proc near
-	
-	push ax
-	push bx
-	push si
-	push dx
-	
-	xor si, si
-	
-	LeerChar:
-	
-		mov ah, 01h         
-		int 21h		; Lee el char actual
-		
-		cmp al, "0"
-			jl Error
-		cmp al, "9"
-			jg Error
-		
-		mov [bx + si], al        ; Guarda char no leido
-		inc si              
-		jmp LeerChar       ; Se va al siguiente char y se repie el proceso.
-		
-	Error:
-	
-		lea dx, novalido
-		mov ah, 09h
-		int 21h
-		
-		jmp FindeLectura
-		
-	FindeLectura:
-		
-		mov al, "$"
-		mov [bx + si], al
-		
-		lea si, [bx]
-        	mov al, [si]
-        	cmp al, 13              ; Verificar si es CR
-        	je EliminarCR
-        	cmp al, 10              ; Verificar si es LF
-        	je EliminarLF
-        	jmp FinInput
-        
-	EliminarCR:
-        	mov byte ptr [si], ' '           ; Reemplazar CR con un espacio
-        	jmp FinInput
-        
-	EliminarLF:
-        	mov byte ptr [si], ' '           ; Reemplazar LF con un espacio
-        	jmp FinInput
-		
-	FinInput:
-		pop dx
-		pop si
-		pop bx
-		pop ax
-		ret
+	mov ah, 01h
+	int 21h
+	ret
 get_input endp
+
+get_buffer proc near
+    lea dx, buffer
+    mov ah, 0ah     ; DOS function to read input
+	int 21h
+	
+	; insert null terminator at end of bytes read
+	mov bx, 0
+	mov bl, buffer[1]
+	mov buffer[bx+2], '$'
+	ret
+get_buffer endp
+
+; Validates input: checks if the input is a positive number
+validate_input proc
+    lea si, buffer+2  ; Skip length byte and return code
+    mov cl, 0              ; Counter for digits
+validate_loop:
+    lodsb                  ; load byte from string
+    cmp al, '$'
+    jz validated_input     ; if null terminator, validated
+    cmp al, '.'
+    je check_decimal       ; jump if decimal point
+    cmp al, '0'
+    jb invalid_input       ; jump if less than '0'
+    cmp al, '9'
+    ja invalid_input       ; jump if greater than '9'
+    inc cl                 ; count valid characters
+    jmp validate_loop      ; continue loop
+check_decimal:
+    ; check if there is more than one decimal point
+    lodsb
+    cmp al, '.'            ; compare it with '.'
+    je invalid_input       ; jump if it's another decimal point
+    jmp validate_loop      ; continue loop
+invalid_input:
+    ; display error message
+	dsp novalido
+    jmp ask              ; restart input process
+validated_input:
+    ret
+validate_input endp
+
 
 
 StringANum proc
@@ -193,7 +191,6 @@ start:
 
 ask:
 	dsp opciones
-	lea si, lado_input
 	call get_input
 
 	cmp al, '1'
@@ -257,48 +254,47 @@ llamar_paralelogramo:
 
 cuadrado:
         ; Reinicia las variables a usar
-        mov [lado], 0
-        mov [perimetronum], 0
-        mov [areanum], 0
+	mov [ladonum], 0
+	mov [perimetronum], 0
+	mov [areanum], 0
 
-        ; Pide el lado
-        dsp pedirlado
+	; Pide el lado
+	dsp lado
 
-        ; Lectura del string del lado recibido
-        lea si, lado_input
-        call get_input
-        mov dx, offset lado_input
-        call StringANum
-        mov [lado], ax
+	; Lectura del string del lado recibido
+	call get_buffer
+	lea dx, buffer+2        ; buffer+2 skips the length byte and return code
+	call StringANum
+	mov [ladonum], ax
 
-        ; Calculo del perimetro del cuadrado
-        mov ax, [lado]
-        mov bx, 4
-        mul bx
-        mov [perimetronum], ax
+	; Calculo del perimetro del cuadrado
+	mov ax, [ladonum]
+	mov bx, 4
+	mul bx
+	mov [perimetronum], ax
 
-        ; Calculo del area del cuadrado
-        mov ax, [lado]
-        mul [lado]
-        mov [areanum], ax
+	; Calculo del area del cuadrado
+	mov ax, [ladonum]
+	mul [ladonum]
+	mov [areanum], ax
 
-        ; Impresion del perimetro
-        dsp perimetro
-        ; Convierte el perimetro a string y lo imprime
-        mov ax, [perimetronum]
-    	lea dx, lado_input 
-    	call NumAString
-    	dsp lado_input
+	; Impresion del perimetro
+	dsp perimetro
+	; Convierte el perimetro a string y lo imprime
+	mov ax, [perimetronum]
+	lea dx, lado_input 
+	call NumAString
+	dsp lado_input
 
-        ; Impresion del area
-        dsp area
-        ; Convierte el area a string y lo imprime
-        mov ax, [areanum]
-    	lea dx, lado_input 
-    	call NumAString
-    	dsp lado_input
+	; Impresion del area
+	dsp area
+	; Convierte el area a string y lo imprime
+	mov ax, [areanum]
+	lea dx, lado_input 
+	call NumAString
+	dsp lado_input
 
-        ret
+	ret
 
 rectangulo:
 	ret
