@@ -55,11 +55,8 @@ multiply_32bit_16bit:
     pop cx
     ret               ; Return to caller  
 
-;     
+; 32bit(DX:AX)*16bit(BX:CX) = DX:AX:BX:CX (we're cooked)    
 multiply_32bit_32bit:
-    ; Input: DX:AX * BX:CX
-    ; Output: DX:AX:BX:CX (64-bit result)
-
     push si
     push di
 
@@ -91,17 +88,14 @@ multiply_32bit_32bit:
     pop si
     ret
     
-; 32bit+32bit(DX:AX + BX:CX) 
+; 32bit(DX:AX)+32bitBX:CX) 
 add_32bit:
     add ax, cx        ; Add low parts
     adc dx, bx        ; Add high parts with carry
     ret               ; Return to caller  
     
-    
+; 32bit(DX:AX)/32bitBX) = AX Quotient DX Remainder   
 divide_32bit_16bit:
-    ; Input: DX:AX / BX
-    ; Output: AX = Quotient, DX = Remainder
-
     push cx           ; Save registers
     push bx
 
