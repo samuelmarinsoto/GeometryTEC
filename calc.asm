@@ -122,19 +122,37 @@ ask:
 	jmp ask
 
 cuadrado:
+	; p = 4*lado
+	; a = lado*lado
     dsp lado
     call get_buffer
     ;call validate_input
     dsp buffer
 
 rectangulo:
+	; p = 2*base + 2*altura
+	; a = base*altura
 triangulo:
+	; p = 3*l
+	; a = sqrt(3)*lado*lado/2
 rombo:
+	; p = 4*lado
+	; a = diag1*diag2/2
 pentagono:
+	; p = 5*lado
+	; a = 5*lado*apotema/2
 hexagono:
+	; p = 6*lado
+	; a = 3*lado*apotema
 circulo:
+	; p = 2*pi*r
+	; a = pi*r*r
 trapezio:
+	; p = b_mayor+b_menor+2*lado
+	; a = (b_mayor + b_menor)*altura/2
 paralelogramo:
+	; p = 2*base+2*lado
+	; a = base*altura
 
 exit:
 	mov ax, 4ch
