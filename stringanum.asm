@@ -30,6 +30,78 @@ xor di, di
 xor bp, bp              ; Flag to indicate decimal part processing (0 = integer, 1 = decimal) 
 
  
+
+ 
+ 
+ 
+parse_loop:
+    lodsb                   ; Load byte at [SI] into AL and increment SI
+    cmp al, '$'             ; Check for string termination
+    je end_parse
+
+    cmp al, [search_byte]   ; Check if character is '.'
+    je start_decimal
+
+    cmp bp, 0
+    je parse_integer
+    jne parse_decimal
+    
+    
+parse_integer:
+    ; Convert ASCII digit to binary
+    sub al, '0'             ; Convert ASCII to numerical value (0-9)
+
+    ; Multiply current integer value by 10
+    ; We perform: num_int_high = num_int_high * 10 + al
+
+    ; Multiply high part by 10
+    mov ax, num_int_high    ; Load current integer part
+    mov cx, 10              ; Load multiplier
+    mul cx                  ; Multiply AX by 10, result in DX:AX
+    add ax, num_int_high    ; Add carry to integer part
+    adc dx, 0               ; Handle carry if necessary
+    mov num_int_high, ax    ; Store result
+
+    ; Add current digit
+    add b.num_int_high, al    ; Add the current digit to the integer part
+    adc dx, 0               ; Handle overflow if any
+    mov num_int_high, ax    ; Store result in num_int_high
+
+    jmp parse_loop
+    
+start_decimal:
+    mov bp, 1               ; Set flag to indicate decimal part processing
+    jmp parse_loop
+
+parse_decimal:
+    ; Convert ASCII digit to binary
+    sub al, '0'             ; Convert ASCII to numerical value (0-9)
+
+    ; Multiply current decimal value by 10
+    ; We perform: num_int_low = num_int_low * 10 + al
+
+    ; Multiply low part by 10
+    mov ax, num_int_low     ; Load current decimal part
+    mov cx, 10              ; Load multiplier
+    mul cx                  ; Multiply AX by 10, result in DX:AX
+    add ax, num_int_low     ; Add carry to decimal part
+    adc dx, 0               ; Handle carry if necessary
+    mov num_int_low, ax     ; Store result
+
+    ; Add current digit
+    add b.num_int_low, al     ; Add the current digit to the decimal part
+    adc dx, 0               ; Handle overflow if any
+    mov num_int_low, ax     ; Store result in num_int_low
+
+    jmp parse_loop     
+    
+
+end_parse:
+
+    ; (Further processing here)   
+    ; a partir de aqui se mandan a donde sea
+
+
 ; operaciones posibles 
    
 add_32bit:
@@ -69,79 +141,6 @@ add_16bit_decimal_to_32bit:
     mov [result_high], ax      ; Store result in high part
 
     ret
-
- 
- 
- 
-parse_loop:
-    lodsb                   ; Load byte at [SI] into AL and increment SI
-    cmp al, '$'             ; Check for string termination
-    je end_parse
-
-    cmp al, [search_byte]   ; Check if character is '.'
-    je start_decimal
-
-    cmp bp, 0
-    je parse_integer
-    jne parse_decimal
-    
-    
-parse_integer:
-    ; Convert ASCII digit to binary
-    sub al, '0'             ; Convert ASCII to numerical value (0-9)
-
-    ; Multiply current integer value by 10
-    ; We perform: num_int_high = num_int_high * 10 + al
-
-    ; Multiply high part by 10
-    mov ax, num_int_high    ; Load current integer part
-    mov cx, 10              ; Load multiplier
-    mul cx                  ; Multiply AX by 10, result in DX:AX
-    add ax, num_int_high    ; Add carry to integer part
-    adc dx, 0               ; Handle carry if necessary
-    mov num_int_high, ax    ; Store result
-
-    ; Add current digit
-    add num_int_high, al    ; Add the current digit to the integer part
-    adc dx, 0               ; Handle overflow if any
-    mov num_int_high, ax    ; Store result in num_int_high
-
-    jmp parse_loop
-    
-start_decimal:
-    mov bp, 1               ; Set flag to indicate decimal part processing
-    jmp parse_loop
-
-parse_decimal:
-    ; Convert ASCII digit to binary
-    sub al, '0'             ; Convert ASCII to numerical value (0-9)
-
-    ; Multiply current decimal value by 10
-    ; We perform: num_int_low = num_int_low * 10 + al
-
-    ; Multiply low part by 10
-    mov ax, num_int_low     ; Load current decimal part
-    mov cx, 10              ; Load multiplier
-    mul cx                  ; Multiply AX by 10, result in DX:AX
-    add ax, num_int_low     ; Add carry to decimal part
-    adc dx, 0               ; Handle carry if necessary
-    mov num_int_low, ax     ; Store result
-
-    ; Add current digit
-    add num_int_low, al     ; Add the current digit to the decimal part
-    adc dx, 0               ; Handle overflow if any
-    mov num_int_low, ax     ; Store result in num_int_low
-
-    jmp parse_loop     
-    
-
-end_parse:
-
-    ; (Further processing here)   
-    a partir de aqui se mandan a donde sea
-
-
-
 
 code ends
 end
