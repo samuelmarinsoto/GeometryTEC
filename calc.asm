@@ -2,14 +2,15 @@ assume cs:code, ds:data
 
 data segment
 
-cr equ 13d ; carriage return (devolverse a izquierda)
-lf equ 10d ; line feed (bajar)
+cr equ 13d ; retorno de carro
+lf equ 10d ; salto de linea
 
-;buffersize + return(bytes read)
-;+80 bytes (79 free bytes + null terminator)
-buffer db 80,?, 80 dup ('?')
-lado_input db 10 dup('$')
 
+buffer db 80,?, 80 dup ('?') ; espacio de memoria de 80 bytes que almacena entrada del usuario  
+
+lado_input db 10 dup('$') ; espacio utilizado para almacenar el numero ingreasado por el usuario
+ 
+; Mensajes que imprime la consola
 bienvenida db "Bienvenido a GeometryTEC, una herramienta para calcular areas y perimetros de figuras","$"
 opciones db lf,cr,"Por favor, digite el numero al lado de la figura a calcular:",cr,lf,"1) Cuadrado",cr,lf,"2) Rectangulo",cr,lf,"3) Triangulo (equilatero)",cr,lf,"4) Rombo",cr,lf,"5) Pentagono",cr,lf,"6) Hexagono",cr,lf,"7) Circulo",cr,lf,"8) Trapezio",cr,lf,"9) Paralelogramo",cr,lf,"Seleccion: ","$"
 seguirosalir db cr,lf,"Calculo exitoso. Continuar con otro calculo, o salir?",cr,lf,"1) Continuar",cr,lf,"2) Salir",cr,lf,"Seleccion: ","$"
@@ -30,6 +31,7 @@ perimetro db lf,cr,"Perimetro: ","$"
 novalido db cr,lf,"Entrada debe ser numero entre 0 y 9999,99",cr,lf,"$"
 opcionmala db cr,lf,"Opcion no disponible",cr,lf,"$"
 
+; variables numericas  tipo double word que almacenan diversas variables de las figuras
 ladonum dw 0
 perimetronum dw 0
 areanum dw 0
@@ -49,64 +51,66 @@ dsp macro msg
 	lea dx, msg
 	call myprint
 endm
-
+   
+   
 code segment
-;procedures
-myprint proc near
+;procedimientos
+myprint proc near ; imprime mensaje en pantalla usando la funcion 09h de DOS 21h
     mov ah, 09h
     int 21h
     ret
 myprint endp
 
-get_input proc near
+get_input proc near ; lee caracter del teclado usando la funcion 01h de DOS 21h
 	mov ah, 01h
 	int 21h
 	ret
 get_input endp
 
-get_buffer proc near
+get_buffer proc near; lee cadena de texto del teclado y la almacena en buffer
     lea dx, buffer
-    mov ah, 0ah     ; DOS function to read input
+    mov ah, 0ah     
 	int 21h
 	
-	; insert null terminator at end of bytes read
+	; anade terminador '$' al final de la cadena
 	mov bx, 0
 	mov bl, buffer[1]
 	mov buffer[bx+2], '$'
 	ret
 get_buffer endp
 
-; Validates input: checks if the input is a positive number
+; Valida si la entrada del usuario es un numero positio
 validate_input proc
-    lea si, buffer+2  ; Skip length byte and return code
-    mov cl, 0              ; Counter for digits
+    lea si, buffer+2
+    mov cl, 0              ; contador de digitos
 validate_loop:
-    lodsb                  ; load byte from string
+    lodsb                  ; carga byte de string
     cmp al, '$'
-    jz validated_input     ; if null terminator, validated
+    jz validated_input     ; valida imput si se llega al terminador '$'
     cmp al, '.'
-    je check_decimal       ; jump if decimal point
+    je check_decimal       ; salta si encuentra decimal
     cmp al, '0'
-    jb invalid_input       ; jump if less than '0'
+    jb invalid_input       ; salta si menor a '0'
     cmp al, '9'
-    ja invalid_input       ; jump if greater than '9'
-    inc cl                 ; count valid characters
-    jmp validate_loop      ; continue loop
+    ja invalid_input       ; invalida inputs si llega el contador de digitos llega a '9'
+    inc cl                 ; cuenta caracteres validos
+    jmp validate_loop      ; continua bucle
 check_decimal:
-    ; check if there is more than one decimal point
+    ; revisa si hay mas de un decimal
     lodsb
-    cmp al, '.'            ; compare it with '.'
-    je invalid_input       ; jump if it's another decimal point
-    jmp validate_loop      ; continue loop
+    cmp al, '.'            ; compara byte actual con '.'
+    je invalid_input       ; se invalida el input si es otro decimal
+    jmp validate_loop      ; continua bucle
 invalid_input:
-    ; display error message
+    ; muestra mensaje de error
 	dsp novalido
-    jmp ask              ; restart input process
+    jmp ask              ; Empieza de cero el proceso de entrada
 validated_input:
     ret
 validate_input endp
 
-StringANum proc
+; pasa el string ingresado por el usuario a un numero en el cual se pueden aplicar operaciones
+StringANum proc 
 	push bx
 	push cx
 	push dx
@@ -122,9 +126,9 @@ BCadNumPos:
 	je finStringANum
 	cmp cl, '$'
 	je finStringANum
-
+    ; multiplica valor acumulado por 10 antes de sumar digito nuevo
 	mul bx
-	sub cl, '0'
+	sub cl, '0' ; caracter se convierte en su valor numerico restando valor ASCII del caracter '0'
 	add ax, cx
 	inc si
 	jmp BCadNumPos
@@ -137,6 +141,7 @@ finStringANum:
 	ret
 StringANum endp
 
+; pasa el numero operado a un string para poder imprimirlo
 NumAString proc
 	push ax
 	push bx
@@ -152,7 +157,7 @@ NumAString proc
 BNumCadPos:
 	xor dx, dx
 	div bx
-	add dl, '0'
+	add dl, '0' ; caracter se convierte en su valor ASCII sumandole '0'
 	push dx
 	inc cx
 	cmp ax, 0
@@ -195,7 +200,7 @@ start:
 	
 	dsp bienvenida
 
-ask:
+ask: ; compara input de usuario para saber que figura calcular
 	dsp opciones
 	call get_input
 
@@ -218,7 +223,7 @@ ask:
 	cmp al, '9'
 	jz near paralelogramo
 
-	; si entrada invalida
+	; si entrada invalida pone mensaje de respuesta invalida y vuelve a mostrar opciones
 	dsp opcionmala
 	jmp near ask
 
