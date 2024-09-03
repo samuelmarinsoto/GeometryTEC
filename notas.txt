@@ -5,3 +5,64 @@ con el contador del decimal, multiplicamos los enteros por 10^contador, para hac
 
 para suma, se suman los dos inputs bien armados, y se imprimen a pantalla en orden, poniendo un punto antes de la parte que hubiera sido decimal
 para multiplicacion, se multiplican los inputs bien armados, se imprimen en orden, poniendo un punto antes de los 4 ultimos (si es, por ejemplo. 1.67x1.69 o algo asi con dos digitos decimales cada input).
+
+in this example, dw0h, dw0l, dw1h, dw1l are 16bits, correct? and their multiplications would yield 32bit (stored in dx:ax) results right? like this
+
+dw0h:dw0l * dw1h:dw1l (16:16 * 16:16)
+high: whole
+low: fractional
+
+and piecewise multiplication would look like this:
+
+16  *  16 =       dx:ax
+-----------------------------
+dw0h*dw1h = resultAh:resultAl 
+dw0h*dw1l = resultBh:resultBl 
+dw1h*dw0l = resultCh:resultCl
+dw0l*dw1l = resultDh:resultDl 
+
+and so the sum, after multiplying, would look like this:
+
+-------------------------------------
+           whole | fractional
+-------------------------------------
+   16   |   16   |   16   |   16   
+highest | higher | lower  | lowest 
+-------------------------------------
+resultAh:resultAl:00000000:00000000 +
+         resultBh:resultBl:00000000 +
+         resultCh:resultCl:00000000 +
+                  resultDh:resultDl +
+
+for which we will discard the "lowest" dword, and the "lower" dword is the fractional part
+
+did i understand correctly?
+
+
+so, i'm thinking for the sum, could i just 
+
+add resultDh with resultCl,
+inc for the carry,
+add resultBl to that, 
+inc for carry again,
+mov that result into the lowest part of a 3 word buffer,
+add the inc to resultCh
+inc for carry again starting from 0
+add to that resultBh
+inc for carry
+add to that resultAl
+inc for carry again
+mov the result into the lower part of the 3 word buffer
+add inc to result Ah
+mov that result into the highest part of the 3 word buffer
+
+and then i would have the entire result in one buffer.
+
+and if not in one buffer, could i mov the results into separate buffers and then figure out how to print those out?
+
+esa mierda no sirve para decimales :suicide:
+
+mejor asi: 16bit numero entero, 16bit para exponente
+
+mul normal, le hacemos un shift por si se pasa para que quepa en 16bits
+suma a exponentes
